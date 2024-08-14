@@ -17,6 +17,7 @@ function initGame() {
 
     addRandomTile();
     addRandomTile();
+    renderTiles();
 }
 
 function addRandomTile() {
@@ -24,7 +25,6 @@ function addRandomTile() {
     if (emptyTiles.length === 0) return;
     const randomTile = emptyTiles[Math.floor(Math.random() * emptyTiles.length)];
     randomTile.dataset.value = Math.random() > 0.1 ? 2 : 4;
-    renderTiles();
 }
 
 function renderTiles() {
@@ -74,6 +74,10 @@ function moveTiles(direction) {
                 } else if (nextValue === value) {
                     nextTile.dataset.value = parseInt(value) * 2;
                     score += parseInt(nextTile.dataset.value);
+                    scoreElement.textContent = score;
+                    bestScore = Math.max(score, bestScore);
+                    bestScoreElement.textContent = bestScore;
+                    localStorage.setItem('bestScore', bestScore);
                     tile.dataset.value = '';
                     moved = true;
                     break;
