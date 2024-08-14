@@ -17,7 +17,6 @@ function initGame() {
 
     addRandomTile();
     addRandomTile();
-    renderTiles();
 }
 
 function addRandomTile() {
@@ -27,52 +26,38 @@ function addRandomTile() {
     randomTile.dataset.value = Math.random() > 0.1 ? 2 : 4;
 }
 
-function renderTiles() {
-    tiles.forEach(tile => {
-        const value = tile.dataset.value;
-        tile.textContent = value ? value : '';
-        tile.className = 'grid-tile';
-        if (value) tile.classList.add(`tile-${value}`);
-    });
-}
-
 function moveTiles(direction) {
     let moved = false;
-
-    const traverseOrder = {
-        'ArrowUp':    { row: [0, 1, 2, 3], col: [0, 1, 2, 3] },
-        'ArrowDown':  { row: [3, 2, 1, 0], col: [0, 1, 2, 3] },
-        'ArrowLeft':  { row: [0, 1, 2, 3], col: [0, 1, 2, 3] },
-        'ArrowRight': { row: [0, 1, 2, 3], col: [3, 2, 1, 0] }
+    const directions = {
+        'ArrowUp': { x: 0, y: -1 },
+        'ArrowDown': { x: 0, y: 1 },
+        'ArrowLeft': { x: -1, y: 0 },
+        'ArrowRight': { x: 1, y: 0 }
     };
+    const { x: dx, y: dy } = directions[direction];
 
-    const { row: rowOrder, col: colOrder } = traverseOrder[direction];
+    for (let i = 0; i < 4; i++) {
+        for (let j = 0; j < 4; j++) {
+            const index = i * 4 + j;
+            const tile = tiles[index];
+            if (!tile.dataset.value) continue;
 
-    for (let r of rowOrder) {
-        for (let c of colOrder) {
-            const tile = tiles[r * 4 + c];
-            const value = tile.dataset.value;
-            if (!value) continue;
-
-            let nextR = r, nextC = c;
-
+            let x = j, y = i;
             while (true) {
-                const moveR = direction === 'ArrowUp' ? nextR - 1 : direction === 'ArrowDown' ? nextR + 1 : nextR;
-                const moveC = direction === 'ArrowLeft' ? nextC - 1 : direction === 'ArrowRight' ? nextC + 1 : nextC;
+                const nextX = x + dx;
+                const nextY = y + dy;
+                if (nextX < 0 || nextX >= 4 || nextY < 0 || nextY >= 4) break;
 
-                if (moveR < 0 || moveR > 3 || moveC < 0 || moveC > 3) break;
-
-                const nextTile = tiles[moveR * 4 + moveC];
-                const nextValue = nextTile.dataset.value;
-
-                if (!nextValue) {
-                    nextTile.dataset.value = value;
+                const nextIndex = nextY * 4 + nextX;
+                const nextTile = tiles[nextIndex];
+                if (!nextTile.dataset.value) {
+                    nextTile.dataset.value = tile.dataset.value;
                     tile.dataset.value = '';
-                    nextR = moveR;
-                    nextC = moveC;
+                    x = nextX;
+                    y = nextY;
                     moved = true;
-                } else if (nextValue === value) {
-                    nextTile.dataset.value = parseInt(value) * 2;
+                } else if (nextTile.dataset.value === tile.dataset.value) {
+                    nextTile.dataset.value *= 2;
                     score += parseInt(nextTile.dataset.value);
                     scoreElement.textContent = score;
                     bestScore = Math.max(score, bestScore);
@@ -91,17 +76,31 @@ function moveTiles(direction) {
     if (moved) {
         addRandomTile();
         checkGameOver();
-        renderTiles();
     }
 }
 
 function checkGameOver() {
-    const emptyTiles = tiles.filter(tile => !tile.dataset.value);
-    if (emptyTiles.length > 0) return;
+    if (tiles.some(tile => !tile.dataset.value)) return;
 
-    for (let r = 0; r < 4; r++) {
-        for (let c = 0; c < 4; c++) {
-            const currentTile = tiles[r * 4 + c];
-            const currentValue = currentTile.dataset.value;
+    for (let i = 0; i < 4; i++) {
+        for (let j = 0; j < 4; j++) {
+            const index = i * 4 + j;
+            const tile = tiles[index];
+            if (i < 3 && tile.dataset.value === tiles[index + 4].dataset.value) return;
+            if (j < 3 && tile.dataset.value === tiles[index + 1].dataset.value) return;
+        }
+    }
 
-           
+    alert('Game Over!');
+    initGame();
+}
+
+document.addEventListener('keydown', event => {
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+        moveTiles(event.key);
+    }
+});
+
+newGameButton.addEventListener('click', initGame);
+
+initGame();
